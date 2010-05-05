@@ -37,7 +37,7 @@
 #include "tree.h"
 #include "tree-dump.h"
 #include "tree-iterator.h"
-#include "tree-gimple.h"
+#include "gimple.h"
 #include "function.h"
 #include "flags.h"
 #include "output.h"
@@ -153,7 +153,7 @@ handle_pure_attribute (tree *node, tree ARG_UNUSED (name), tree ARG_UNUSED (args
                        int ARG_UNUSED (flags), bool *no_add_attrs)
 {
   if (TREE_CODE (*node) == FUNCTION_DECL)
-    DECL_IS_PURE (*node) = 1;
+    DECL_PURE_P (*node) = 1;
   /* ??? TODO: Support types.  */
   else
     {
@@ -356,9 +356,18 @@ def_builtin_1 (enum built_in_function fncode,
   if (fntype == error_mark_node)
     return;
 
-  libname = name + strlen ("__builtin_");
+  if (!libtype)
+    {
+      decl = add_builtin_function (name, fntype,
+        fncode, fnclass, NULL, fnattrs);
+    }
+  else
+    {
+      libname = name + strlen ("__builtin_");
+      decl = add_builtin_function (libname, libtype,
+        fncode, fnclass, NULL, fnattrs);
+    }
 
-  decl = add_builtin_function (libname, libtype, fncode, fnclass, NULL, fnattrs);
   built_in_decls[(int) fncode] = decl;
   if (implicit_p)
     implicit_built_in_decls[(int) fncode] = decl;
@@ -369,10 +378,11 @@ static void
 init_builtins (void)
 {
 #define DEF_BUILTIN(ENUM, NAME, CLASS, TYPE, LIBTYPE, BOTH_P, FALLBACK_P, NONANSI_P, ATTRS, IMPLICIT, COND) \
-      if (NAME && COND && BOTH_P)                         \
+      if (NAME && COND /*&& BOTH_P*/)                         \
         def_builtin_1 (ENUM, NAME, CLASS,                 \
                        builtin_types[(int) TYPE],         \
-                       builtin_types[(int) LIBTYPE],      \
+                       (BOTH_P)?                          \
+                         builtin_types[(int) LIBTYPE] : 0,\
                        built_in_attributes[(int) ATTRS],  \
                        IMPLICIT);
 #  include "builtins.def"

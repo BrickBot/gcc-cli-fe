@@ -42,7 +42,7 @@
 #include "tree.h"
 #include "tree-dump.h"
 #include "tree-iterator.h"
-#include "tree-gimple.h"
+#include "gimple.h"
 #include "function.h"
 #include "flags.h"
 #include "output.h"
@@ -62,7 +62,7 @@
 #include "bindings.h"
 
 /* Tables of information about tree codes.  */
-
+/*
 #define DEFTREECODE(SYM, NAME, TYPE, LENGTH) TYPE,
 const enum tree_code_class tree_code_type[] = {
 #include "tree.def"
@@ -80,6 +80,7 @@ const char *const tree_code_name[] = {
 #include "tree.def"
 };
 #undef DEFTREECODE
+*/
 
 /* Number of bits in int and char - accessed by front end. TODO: see if really necessary */
 unsigned int tree_code_int_size = SIZEOF_INT * HOST_BITS_PER_CHAR;
@@ -263,6 +264,9 @@ cil_type_for_mode (enum machine_mode mode, int unsigned_p)
   if (mode == DImode)
     return unsigned_p ? unsigned_intDI_type_node : intDI_type_node;
 
+  if (mode == TImode)
+    return unsigned_p ? unsigned_intTI_type_node : intTI_type_node;
+
 #if HOST_BITS_PER_WIDE_INT >= 64
   if (mode == TYPE_MODE (intTI_type_node))
     return unsigned_p ? unsigned_intTI_type_node : intTI_type_node;
@@ -336,7 +340,7 @@ cil_register_builtin_type (tree type, const char* name)
 {
   tree decl;
 
-  decl = build_decl (TYPE_DECL, get_identifier (name), type);
+  decl = build_decl (UNKNOWN_LOCATION, TYPE_DECL, get_identifier (name), type);
   DECL_ARTIFICIAL (decl) = 1;
   if (!TYPE_NAME (type))
     TYPE_NAME (type) = decl;
@@ -358,10 +362,9 @@ cil_insert_block (tree block ATTRIBUTE_UNUSED)
 }
 
 static tree
-cil_pushdecl (tree t)
+cil_pushdecl (tree t ATTRIBUTE_UNUSED)
 {
-  gcc_unreachable ();
-  return cil_bindings_push_decl (t);
+  return NULL_TREE;
 }
 
 /* Return the list of declarations in the current level. Note that this list
@@ -470,6 +473,56 @@ cil_get_alias_set (tree t)
   return -1;
 }
 
+/* Nonzero if the type T promotes to int.  This is (nearly) the
+   integral promotions defined in ISO C99 6.3.1.1/2.  */
+
+static bool
+cil_promoting_integer_type_p (const_tree t)
+{
+  switch (TREE_CODE (t))
+    {
+    case INTEGER_TYPE:
+      return (TYPE_MAIN_VARIANT (t) == char_type_node
+	      || TYPE_MAIN_VARIANT (t) == signed_char_type_node
+	      || TYPE_MAIN_VARIANT (t) == unsigned_char_type_node
+	      || TYPE_MAIN_VARIANT (t) == short_integer_type_node
+	      || TYPE_MAIN_VARIANT (t) == short_unsigned_type_node
+	      || TYPE_PRECISION (t) < TYPE_PRECISION (integer_type_node));
+
+    case ENUMERAL_TYPE:
+      /* ??? Technically all enumerations not larger than an int
+	 promote to an int.  But this is used along code paths
+	 that only want to notice a size change.  */
+      return TYPE_PRECISION (t) < TYPE_PRECISION (integer_type_node);
+
+    case BOOLEAN_TYPE:
+      return 1;
+
+    default:
+      return 0;
+    }
+}
+
+/* Given a type, apply default promotions wrt unnamed function
+   arguments and return the new type.  */
+
+tree
+cil_type_promotes_to (tree type)
+{
+  if (TYPE_MAIN_VARIANT (type) == float_type_node)
+    return double_type_node;
+
+  if (cil_promoting_integer_type_p (type))
+    {
+      /* Preserve unsignedness if not really getting any wider.  */
+      if (TYPE_UNSIGNED (type)
+	  && (TYPE_PRECISION (type) == TYPE_PRECISION (integer_type_node)))
+	return unsigned_type_node;
+      return integer_type_node;
+    }
+
+  return type;
+}
 #define LANG_HOOKS_MARK_ADDRESSABLE cil_mark_addressable
 #define LANG_HOOKS_TYPE_FOR_MODE cil_type_for_mode
 #define LANG_HOOKS_TYPE_FOR_SIZE cil_type_for_size
@@ -498,6 +551,9 @@ cil_get_alias_set (tree t)
 #undef LANG_HOOKS_REGISTER_BUILTIN_TYPE
 #define LANG_HOOKS_REGISTER_BUILTIN_TYPE cil_register_builtin_type
 
+#undef LANG_HOOKS_TYPE_PROMOTES_TO
+#define LANG_HOOKS_TYPE_PROMOTES_TO cil_type_promotes_to
+
 /* Hooks unique to CIL.  */
 
 #undef LANG_HOOKS_NAME
@@ -511,7 +567,7 @@ cil_get_alias_set (tree t)
 #undef LANG_HOOKS_HANDLE_OPTION
 #define LANG_HOOKS_HANDLE_OPTION cil_handle_option
 
-const struct lang_hooks lang_hooks = LANG_HOOKS_INITIALIZER;
+struct lang_hooks lang_hooks = LANG_HOOKS_INITIALIZER;
 
 /* Language hooks that are not part of lang_hooks.  */
 
@@ -524,6 +580,73 @@ const struct lang_hooks lang_hooks = LANG_HOOKS_INITIALIZER;
 
    Adapted from c/convert.c
 */
+/*
+tree
+convert (tree type, tree expr)
+{
+  tree e = expr;
+  enum tree_code code = TREE_CODE (type);
+  const char *invalid_conv_diag;
+
+  if (type == error_mark_node
+      || expr == error_mark_node
+      || TREE_TYPE (expr) == error_mark_node)
+    return error_mark_node;
+
+ if ((invalid_conv_diag = targetm.invalid_conversion (TREE_TYPE (expr), type)))
+    {
+      error (invalid_conv_diag);
+      return error_mark_node;
+    }
+
+ if (type == TREE_TYPE (expr))
+    return expr;
+
+  if (TYPE_MAIN_VARIANT (type) == TYPE_MAIN_VARIANT (TREE_TYPE (expr)))
+    return fold_build1 (NOP_EXPR, type, expr);
+  if (TREE_CODE (TREE_TYPE (expr)) == ERROR_MARK)
+    return error_mark_node;
+  if (TREE_CODE (TREE_TYPE (expr)) == VOID_TYPE)
+    {
+      error ("void value not ignored as it ought to be");
+      return error_mark_node;
+    }
+    switch(code)
+    {
+      case VOID_TYPE:
+	return build1 (CONVERT_EXPR, type, e);
+      case INTEGER_TYPE:
+      case ENUMERAL_TYPE:
+	return fold (convert_to_integer (type, e));
+      case BOOLEAN_TYPE:
+	return build1 (CONVERT_EXPR, type, e);
+      case POINTER_TYPE:
+      case REFERENCE_TYPE:
+	return fold (convert_to_pointer (type, e));
+      case REAL_TYPE:
+	return fold (convert_to_real (type, e));
+      case COMPLEX_TYPE:
+	return fold (convert_to_complex (type, e));
+      case VECTOR_TYPE:
+//	if(TREE_CODE(e) == VECTOR_CST)
+//	  return e;
+//	else
+	  return fold (convert_to_vector (type, e));
+      case RECORD_TYPE:
+      case UNION_TYPE:
+	if(lang_hooks.types_compatible_p (type, TREE_TYPE (expr))){
+	  return e;
+	}else{
+	  error ("lang_hooks.types_compatible_p  failure for conversion of '%s' to '%s'.\n",tree_code_name[TREE_CODE (expr)],tree_code_name[TREE_CODE (type)] ); 
+	  return error_mark_node;
+	}
+      default:
+	error ("conversion of '%s' to '%s' not supported.\n",tree_code_name[TREE_CODE (expr)],tree_code_name[TREE_CODE (type)] ); 
+	return error_mark_node;
+    }
+}
+*/
+
 tree
 convert (tree type, tree expr)
 {
@@ -591,6 +714,7 @@ convert (tree type, tree expr)
   error ("conversion not supported");
   return error_mark_node;
 }
+
 
 #include "debug.h" /* for debug_hooks, needed by gt-cil-treetree.h */
 #include "gt-cil-cil-lang.h"
