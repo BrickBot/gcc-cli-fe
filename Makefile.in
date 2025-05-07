@@ -15012,7 +15012,7 @@ maintainer-clean-gcc maintainer-clean-cil:
 	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
 	          "RANLIB=$${RANLIB}" \
 	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
-	          maintainer-clean) \
+	          $@) \
 	  || exit 1
 
 @endif gcc
