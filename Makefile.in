@@ -14360,7 +14360,7 @@ all-gcc: stage_current
 TARGET-gcc=all
 maybe-all-gcc: all-gcc
 all-gcc: TARGET-gcc_LOCAL=$(TARGET-gcc)
-all-cil: all-libiberty all-libcpp all-libdecnumber
+all-cil: all-libiberty all-libcpp all-libdecnumber all-target-libcilsupport
 all-cil: TARGET-gcc_LOCAL=all-cil
 all-gcc all-cil: configure-gcc
 	@r=`${PWD_COMMAND}`; export r; \
@@ -14658,7 +14658,7 @@ maybe-check-gcc:
 @if gcc
 maybe-check-gcc: check-gcc
 
-check-cil: check-libiberty check-libcpp check-libdecnumber
+check-cil: check-libiberty check-libcpp check-libdecnumber check-target-libcilsupport
 check-gcc check-cil:
 	@: $(MAKE); $(unstage)
 	@r=`${PWD_COMMAND}`; export r; \
@@ -14674,7 +14674,7 @@ maybe-install-gcc:
 @if gcc
 maybe-install-gcc: install-gcc
 
-install-cil: install-libiberty install-libcpp install-libdecnumber
+install-cil: install-libiberty install-libcpp install-libdecnumber install-target-libcilsupport
 install-gcc install-cil: installdirs
 	@: $(MAKE); $(unstage)
 	@r=`${PWD_COMMAND}`; export r; \
@@ -14692,7 +14692,7 @@ maybe-info-gcc:
 @if gcc
 maybe-info-gcc: info-gcc
 
-info-cil: info-libiberty info-libcpp info-libdecnumber
+info-cil: info-libiberty info-libcpp info-libdecnumber info-target-libcilsupport
 info-gcc info-cil: configure-gcc 
 	@[ -f ./gcc/Makefile ] || exit 0; \
 	r=`${PWD_COMMAND}`; export r; \
@@ -14717,7 +14717,7 @@ maybe-dvi-gcc:
 @if gcc
 maybe-dvi-gcc: dvi-gcc
 
-dvi-cil: dvi-libiberty dvi-libcpp dvi-libdecnumber
+dvi-cil: dvi-libiberty dvi-libcpp dvi-libdecnumber dvi-target-libcilsupport
 dvi-gcc dvi-cil: configure-gcc 
 	@[ -f ./gcc/Makefile ] || exit 0; \
 	r=`${PWD_COMMAND}`; export r; \
@@ -14792,7 +14792,7 @@ maybe-TAGS-gcc:
 @if gcc
 maybe-TAGS-gcc: TAGS-gcc
 
-TAGS-cil: TAGS-libiberty TAGS-libcpp TAGS-libdecnumber
+TAGS-cil: TAGS-libiberty TAGS-libcpp TAGS-libdecnumber TAGS-target-libcilsupport
 TAGS-gcc TAGS-cil: configure-gcc 
 	@[ -f ./gcc/Makefile ] || exit 0; \
 	r=`${PWD_COMMAND}`; export r; \
@@ -14922,7 +14922,7 @@ maybe-mostlyclean-gcc:
 @if gcc
 maybe-mostlyclean-gcc: mostlyclean-gcc
 
-mostlyclean-cil: mostlyclean-libiberty mostlyclean-libcpp mostlyclean-libdecnumber
+mostlyclean-cil: mostlyclean-libiberty mostlyclean-libcpp mostlyclean-libdecnumber mostlyclean-target-libcilsupport
 mostlyclean-gcc mostlyclean-cil: 
 	@[ -f ./gcc/Makefile ] || exit 0; \
 	r=`${PWD_COMMAND}`; export r; \
@@ -14947,7 +14947,7 @@ maybe-clean-gcc:
 @if gcc
 maybe-clean-gcc: clean-gcc
 
-clean-cil: clean-libiberty clean-libcpp clean-libdecnumber
+clean-cil: clean-libiberty clean-libcpp clean-libdecnumber clean-target-libcilsupport
 clean-gcc clean-cil: 
 	@[ -f ./gcc/Makefile ] || exit 0; \
 	r=`${PWD_COMMAND}`; export r; \
@@ -14972,7 +14972,7 @@ maybe-distclean-gcc:
 @if gcc
 maybe-distclean-gcc: distclean-gcc
 
-distclean-cil: distclean-libiberty distclean-libcpp distclean-libdecnumber
+distclean-cil: distclean-libiberty distclean-libcpp distclean-libdecnumber distclean-target-libcilsupport
 distclean-gcc distclean-cil: 
 	@[ -f ./gcc/Makefile ] || exit 0; \
 	r=`${PWD_COMMAND}`; export r; \
@@ -14997,7 +14997,7 @@ maybe-maintainer-clean-gcc:
 @if gcc
 maybe-maintainer-clean-gcc: maintainer-clean-gcc
 
-maintainer-clean-cil: maintainer-clean-libiberty maintainer-clean-libcpp maintainer-clean-libdecnumber
+maintainer-clean-cil: maintainer-clean-libiberty maintainer-clean-libcpp maintainer-clean-libdecnumber maintainer-clean-target-libcilsupport
 maintainer-clean-gcc maintainer-clean-cil: 
 	@[ -f ./gcc/Makefile ] || exit 0; \
 	r=`${PWD_COMMAND}`; export r; \
